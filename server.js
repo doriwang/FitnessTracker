@@ -1,8 +1,9 @@
 // require dependencies and models
+const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const logger = require("morgan");
-const Workout = require("./models");
+const db = require("./models");
 
 // setting up port and middleware
 const PORT = process.env.PORT || 8080;
@@ -17,30 +18,71 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // connect to mongodb
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workoutdb", {
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/fitnessdb", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    useFindAndModify: false
+    useFindAndModify: false,
 });
 
 // routes
-app.get("/api/workouts", (req, res) => {
-    Workout.find({}).then(data => {
-        res.json(data)
-        console.log(data)
-    }).catch(err => {
-        res.json(err)
-    })
-})
+app.get("/exercise", (req, res) => {
+    res.sendFile(path.join(__dirname, "./public/exercise.html"));
+});
 
-// app.post("/api/workouts", (req, res) => {
-//     Workout.create(req.body).then(data => {
-//         res.json(data)
-//         console.log(data)
-//     }).catch(err => {
-//         res.json(err)
-//     })
-// })
+app.get("/stats", (req, res) => {
+    res.sendFile(path.join(__dirname, "./public/stats.html"));
+});
+
+app.get("/api/workouts/range", (req, res) => {
+    db.Workout.find({})
+        .then((data) => {
+            res.json(data);
+        })
+        .catch((err) => {
+            res.json(err);
+        });
+});
+
+app.get("/api/workouts", (req, res) => {
+    db.Workout.find({})
+        .then((data) => {
+            res.json(data);
+        })
+        .catch((err) => {
+            res.json(err);
+        });
+});
+
+app.post("/api/workouts", (req, res) => {
+    db.Workout.create({})
+        .then((data) => {
+            console.log(data);
+            res.json(data);
+        })
+        .catch((err) => {
+            res.json(err);
+        });
+});
+
+app.put("/api/workouts/:id", (req, res) => {
+    db.Workout.findByIdAndUpdate(
+            req.params.id, {
+                $push: {
+                    exercises: req.body,
+                },
+            }, {
+                new: true,
+                runValidators: true,
+            }
+        )
+        .then((data) => {
+            console.log(data);
+            res.json(data);
+        })
+        .catch((err) => {
+            res.json(err);
+        });
+});
 
 app.listen(PORT, () => {
     console.log(`App running on port ${PORT}!`);
